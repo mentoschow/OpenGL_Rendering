@@ -12,6 +12,9 @@
 #include "Camera.h"
 #include "Mesh.h"
 #include "Model.h"
+#include "Material.h"
+#include "LightDirectional.h"
+#include "LightPoint.h"
 
 using namespace std;
 using namespace glm;
@@ -24,40 +27,82 @@ const char* GLSL_VERSION = "#version 420";
 //Camera Settings
 vec3 cam_pos = vec3(0, 0, 3.0f);
 vec3 world_up = vec3(0, 1.0f, 0);
-float cam_pitch = radians(-15.0f);
+float cam_pitch = radians(0.0f);
 float cam_yaw = radians(180.0f);
-Camera camera(cam_pos, cam_pitch, cam_yaw, world_up);
+Camera camera(cam_pos, cam_pitch, cam_yaw, world_up); 
 #pragma endregion
 
-#pragma region Art Resources
+#pragma region Lightings
+ImVec4 ambient_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+float ambient_strength = 0.1f;
+float shininess = 32.0f;
+//directional light
+ImVec4 light_dir_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+vec3 light_dir_dir = vec3(0);
+LightDirectional lightDirectional(vec3(light_dir_color.x, light_dir_color.y, light_dir_color.z), radians(light_dir_dir));
+//point light
+ImVec4 light_point_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+vec3 light_point_pos = vec3(0, 3, 3);
+float light_point_atten = 0.5f;
+LightPoint lightPoint(light_point_pos, vec3(light_point_color.x, light_point_color.y, light_point_color.z), light_point_atten);
+//
+#pragma endregion
+
+#pragma region Phong
+//Cube
 float vertices[] = {
-	// positions          // texture coords
-	 0.5f,  0.5f, 0.0f,   1.0f, 1.0f, // top right
-	 0.5f, -0.5f, 0.0f,   1.0f, 0.0f, // bottom right
-	-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, // bottom left
-	-0.5f,  0.5f, 0.0f,   0.0f, 1.0f  // top left 
+		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+
+		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+
+		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+		-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+		-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+		 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
 };
-unsigned int indices[] = {
-		0, 1, 3, // first triangle
-		1, 2, 3  // second triangle
-};
+ImVec4 object_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+bool show_phong_settings = false;
 #pragma endregion
 
 #pragma region Functions
 //键盘控制
-bool mouse_enable = false;
+float deltaX, deltaY;
+bool firstMouse = true;
 void processInput(GLFWwindow* window) {
-	//鼠标显示/隐藏
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-		if (mouse_enable) {
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-			mouse_enable = false;
-		}			
-		else {
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-			mouse_enable = true;
-		}
-	}
+	
 	//camera控制
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 		camera.speedZ = -1.0f;
@@ -72,10 +117,26 @@ void processInput(GLFWwindow* window) {
 		camera.speedX = 1.0f;
 	}
 	else if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-		camera.speedY = 1.0f;
+		camera.speedY = -1.0f;
 	}
 	else if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-		camera.speedY = -1.0f;
+		camera.speedY = 1.0f;
+	}
+	else if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+		deltaX = 5.0f;
+		camera.ProcessMouseMovement(deltaX, deltaY);
+	}
+	else if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+		deltaX = -5.0f;
+		camera.ProcessMouseMovement(deltaX, deltaY);
+	}
+	else if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+		deltaY = 5.0f;
+		camera.ProcessMouseMovement(deltaX, deltaY);
+	}
+	else if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+		deltaY = -5.0f;
+		camera.ProcessMouseMovement(deltaX, deltaY);
 	}
 	else {
 		camera.speedZ = 0.0f;
@@ -85,21 +146,20 @@ void processInput(GLFWwindow* window) {
 }
 
 //鼠标控制
-float lastX, lastY;
-bool firstMouse = true;
-void mouse_callback(GLFWwindow* window, double xPos, double yPos) {
-	float deltaX, deltaY;
-	if (firstMouse) {
-		lastX = xPos;
-		lastY = yPos;
-		firstMouse = false;
-	}
-	deltaX = lastX - xPos;
-	deltaY = lastY - yPos;
-	lastX = xPos;
-	lastY = yPos;
-	camera.ProcessMouseMovement(deltaX, deltaY);
-}
+
+//void mouse_callback(GLFWwindow* window, double xPos, double yPos) {
+//	float deltaX, deltaY;
+//	if (firstMouse) {
+//		lastX = xPos;
+//		lastY = yPos;
+//		firstMouse = false;
+//	}
+//	deltaX = lastX - xPos;
+//	deltaY = lastY - yPos;
+//	lastX = xPos;
+//	lastY = yPos;
+//	camera.ProcessMouseMovement(deltaX, deltaY);
+//}
 
 //读取纹理 internalFormat:显存中存储的格式 format:内存指针data中存储的格式 type:像素数据的bit depth
 unsigned int LoadTextures(const char* texturePath, GLint internalFormat, GLenum format, int TextureSlot) {
@@ -139,8 +199,6 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 	glfwMakeContextCurrent(window);
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	glfwSetCursorPosCallback(window, mouse_callback);
 
 	//初始化GLEW
 	glewExperimental = true;
@@ -171,43 +229,52 @@ int main(int argc, char* argv[]) {
 	#pragma endregion	
 
 	#pragma region Shaders
-	Shaders* shader = new Shaders("vertex.vert", "fragment.frag");
+	Shaders shader("vertex.vert", "fragment.frag");
+	Shaders lightShader("lightCube.vert", "lightCube.frag");
 	#pragma endregion
 
-	#pragma region Mesh and Model
+	#pragma region Material
+	Material phong;
+	phong.create_phong(shader, vec3(ambient_color.x, ambient_color.y, ambient_color.z), vec3(ambient_color.x, ambient_color.y, ambient_color.z), vec3(ambient_color.x, ambient_color.y, ambient_color.z), shininess);
+	#pragma endregion
+
+
+	#pragma region Model
 	string exePath = argv[0];  //exe文件的路径
 	#pragma endregion
 
 
 	#pragma region VAO,VBO,EBO
-	unsigned int VBO, VAO, EBO;
-	glGenVertexArrays(1, &VAO);
+	unsigned int VBO, cubeVAO, lightPointVAO;
+	
+	glGenVertexArrays(1, &cubeVAO);
+	glBindVertexArray(cubeVAO);
+
 	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
-	
-	glBindVertexArray(VAO);
-	
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	//glGenBuffers(1, &EBO);
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-	// position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
-	// texture coord attribute
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
+
+	glGenVertexArrays(1, &lightPointVAO);
+	glBindVertexArray(lightPointVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
 	#pragma endregion
 
 	#pragma region MVP
 	mat4 ModelMat, ViewMat, ProjectionMat;
 	ProjectionMat = perspective(radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);	
 	ModelMat = translate(mat4(1.0f), vec3(0.0f, 0.0f, 0.0f));
-	ModelMat = scale(ModelMat, glm::vec3(1.0f, 1.0f, 1.0f));
-	shader->use();	
-	shader->setMat4("ProjectionMat", ProjectionMat);
+	ModelMat = scale(ModelMat, glm::vec3(1.0f, 1.0f, 1.0f));	
 	#pragma endregion
 
 	//rendering loop
@@ -221,25 +288,48 @@ int main(int argc, char* argv[]) {
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		#pragma region show imgui window
-		static float f = 0.0f;
-		static int counter = 0;
-		
-		ImGui::Begin("Settings");
-		
-		ImGui::Text("Rendering Settings");
-		
-		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
-		ImGui::ColorEdit3("clear color", (float*)&clear_color);
-		
-		ImGui::Text("Load models");
-		
-		if (ImGui::Button("nanosuit")) {
+		bool rendering_window = true;
 
-		}		
+		#pragma region show imgui window		
+		ImGui::Begin("Settings", NULL);
 		
-		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::Text("Rendering Type");
+		if (ImGui::Button("Default")) {
+			shader.reloadShader(&shader.ID, "vertex.vert", "fragment.frag");
+		}
+		if (ImGui::Button("Phong Model")) {
+			shader.reloadShader(&shader.ID, "Phong.vert", "Phong.frag");
+		}
+		ImGui::SameLine();
+		ImGui::Checkbox("Phong Model Settings", &show_phong_settings);
+
+		if (ImGui::CollapsingHeader("Default Settings")) {
+			ImGui::ColorEdit3("clear color", (float*)&clear_color);
+			ImGui::ColorEdit3("object color", (float*)&object_color);
+		}	
+		if (ImGui::CollapsingHeader("Directional Light Settings")) {
+			ImGui::ColorEdit3("Directional light color", (float*)&light_dir_color);
+			ImGui::SliderFloat("Directional light direction x", &light_dir_dir.x, -180.0f, 180.0f);
+			ImGui::SliderFloat("Directional light direction y", &light_dir_dir.y, -180.0f, 180.0f);
+			ImGui::SliderFloat("Directional light direction z", &light_dir_dir.z, -180.0f, 180.0f);
+		}
+		if (ImGui::CollapsingHeader("Point Light Settings")) {
+			ImGui::ColorEdit3("Point light color", (float*)&light_point_color);
+			ImGui::SliderFloat("Point light position x", &light_point_pos.x, -5.0f, 5.0f);
+			ImGui::SliderFloat("Point light position y", &light_point_pos.y, -5.0f, 5.0f);
+			ImGui::SliderFloat("Point light position z", &light_point_pos.z, -5.0f, 5.0f);
+		}
+		
 		ImGui::End();
+
+		if (show_phong_settings)
+		{
+			ImGui::Begin("Phong Model Settings", &show_phong_settings);
+			ImGui::ColorEdit3("ambient color", (float*)&ambient_color);
+			ImGui::SliderFloat("ambient strength", &ambient_strength, 0.0f, 1.0f);
+			ImGui::SliderFloat("shininess", &shininess, 1.0f, 64.0f);
+			ImGui::End();
+		}
 		#pragma endregion
 
 		#pragma region rendering
@@ -250,17 +340,46 @@ int main(int argc, char* argv[]) {
 		glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		shader->use();
-
-		//update view matrix
+		//set uniform and draw
+		//main
+		shader.use();
 		ViewMat = camera.GetViewMatrix();
-		shader->setMat4("ModelViewMat", ViewMat * ModelMat);
-		//draw
-		glBindVertexArray(VAO);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		shader.setMat4("ModelMat", ModelMat);
+		shader.setMat4("ProjectionMat", ProjectionMat);
+		shader.setMat4("ViewMat", ViewMat);
+		shader.setVec3("objColor", object_color.x, object_color.y, object_color.z);
+		shader.setVec3("ambientColor", ambient_color.x, ambient_color.y, ambient_color.z);
+		shader.setFloat("ambientStrength", ambient_strength);
+		shader.setVec3("viewPos", camera.Position.x, camera.Position.y, camera.Position.z);
+		shader.setFloat("material.shininess", shininess);
+
+		lightDirectional.UpdateDirectionalLight(vec3(light_dir_color.x, light_dir_color.y, light_dir_color.z), radians(light_dir_dir));
+		shader.setVec3("lightDir.color", lightDirectional.Color.x, lightDirectional.Color.y, lightDirectional.Color.z);
+		shader.setVec3("lightDir.dir", lightDirectional.Direction.x, lightDirectional.Direction.y, lightDirectional.Direction.z);
+
+		lightPoint.UpdateLightPoint(light_point_pos, vec3(light_point_color.x, light_point_color.y, light_point_color.z), light_point_atten);
+		shader.setVec3("lightPoint.pos", lightPoint.Position.x, lightPoint.Position.y, lightPoint.Position.z);
+		shader.setVec3("lightPoint.color", lightPoint.Color.x, lightPoint.Color.y, lightPoint.Color.z);
+		shader.setFloat("lightPoint.constant", lightPoint.constant);
+		shader.setFloat("lightPoint.linear", lightPoint.linear);
+		shader.setFloat("lightPoint.quadratic", lightPoint.quadratic);
+
+		glBindVertexArray(cubeVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		//point light
+		lightShader.use();
+		mat4 ModelMat_light = translate(mat4(1.0f), lightPoint.Position);
+		ModelMat_light = scale(ModelMat_light, vec3(0.1f));
+		lightShader.setMat4("ModelMat", ModelMat_light);
+		lightShader.setMat4("ProjectionMat", ProjectionMat);
+		lightShader.setMat4("ViewMat", ViewMat);
+		lightShader.setVec3("lightColor", light_point_color.x, light_point_color.y, light_point_color.z);
+		glBindVertexArray(lightPointVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-		#pragma endregion	
+		#pragma endregion
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

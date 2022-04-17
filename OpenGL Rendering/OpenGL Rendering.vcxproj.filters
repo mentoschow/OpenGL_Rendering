@@ -63,6 +63,15 @@
     <ClCompile Include="Model.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Material.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="LightDirectional.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="LightPoint.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\imgui\imconfig.h">
@@ -101,6 +110,15 @@
     <ClInclude Include="Model.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Material.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="LightDirectional.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="LightPoint.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="vertex.vert">
@@ -110,5 +128,17 @@
       <Filter>资源文件\Shaders\Fragment</Filter>
     </None>
     <None Include="packages.config" />
+    <None Include="Phong.frag">
+      <Filter>资源文件\Shaders\Fragment</Filter>
+    </None>
+    <None Include="Phong.vert">
+      <Filter>资源文件\Shaders\Vertex</Filter>
+    </None>
+    <None Include="lightCube.vert">
+      <Filter>资源文件\Shaders\Vertex</Filter>
+    </None>
+    <None Include="lightCube.frag">
+      <Filter>资源文件\Shaders\Fragment</Filter>
+    </None>
   </ItemGroup>
 </Project>
