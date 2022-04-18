@@ -7,16 +7,17 @@ using namespace glm;
 class LightPoint
 {
 public:
-	LightPoint(vec3 position, vec3 color, float attenuation);
+	LightPoint(vec3 position, vec3 color);
 	vec3 Position;
 	vec3 Color;
-	float Attenuation;
 
 	float constant;
 	float linear;
 	float quadratic;
 
-	void UpdateLightPoint(vec3 position, vec3 color, float attenuation);
+	bool enable;
+
+	void UpdateLightPoint(vec3 position, vec3 color);
 
 private:
 

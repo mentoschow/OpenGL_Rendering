@@ -72,6 +72,9 @@
     <ClCompile Include="LightPoint.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="LightSpot.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\imgui\imconfig.h">
@@ -119,6 +122,9 @@
     <ClInclude Include="LightPoint.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="LightSpot.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="vertex.vert">
@@ -138,6 +144,12 @@
       <Filter>资源文件\Shaders\Vertex</Filter>
     </None>
     <None Include="lightCube.frag">
+      <Filter>资源文件\Shaders\Fragment</Filter>
+    </None>
+    <None Include="screen.vert">
+      <Filter>资源文件\Shaders\Vertex</Filter>
+    </None>
+    <None Include="screen.frag">
       <Filter>资源文件\Shaders\Fragment</Filter>
     </None>
   </ItemGroup>

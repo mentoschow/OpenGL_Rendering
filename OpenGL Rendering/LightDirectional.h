@@ -12,6 +12,7 @@ public:
 	vec3 Position;
 	vec3 Direction;
 	vec3 Color;
+	bool enable;
 
 	void UpdateDirectionalLight(vec3 color, vec3 angle);
 

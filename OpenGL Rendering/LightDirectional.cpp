@@ -2,6 +2,7 @@
 
 LightDirectional::LightDirectional(vec3 color, vec3 angle)
 {
+	enable = true;
 	UpdateDirectionalLight(color, angle);
 }
 
