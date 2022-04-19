@@ -25,6 +25,7 @@ using namespace glm;
 const unsigned int SCR_WIDTH = 1920;
 const unsigned int SCR_HEIGHT = 1080;
 const char* GLSL_VERSION = "#version 420";
+float Gamma = 2.2f;
 const ImVec4 white = ImVec4(1.0, 1.0, 1.0, 1.0);
 const ImVec4 black = ImVec4(0.0, 0.0, 0.0, 1.0);
 const ImVec4 red = ImVec4(1.0, 0.0, 0.0, 1.0);
