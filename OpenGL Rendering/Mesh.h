@@ -1,6 +1,11 @@
 #pragma once
 #include <glm.hpp>
+#include <gtc/matrix_transform.hpp>
 #include <vector>
+#include <string>
+#include <sstream>
+#include <fstream>
+#include <iostream>
 #include "Shaders.h"
 
 using namespace glm;
@@ -24,16 +29,15 @@ class Mesh
 {
 public:
 	//Mesh data
-	vector<Vertex> vertex;
+	vector<Vertex> vertices;
 	vector<unsigned int> indices;
-	vector<Texture> texture;
-	unsigned int VAO;
+	vector<Texture> textures;
+	unsigned int VAO, VBO, EBO;
 
 	Mesh(vector<Vertex> vertex, vector<unsigned int> indices, vector<Texture> texture);
-	void Draw(Shaders* shader);
+	void Draw(Shaders &shader);
 
 private:
-	unsigned int VBO, EBO;
 	void setupMesh();
 };
 

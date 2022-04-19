@@ -3,12 +3,14 @@ out vec4 FragColor;
 
 in vec3 Normal;
 in vec3 FragPos;
+in vec2 TexCoord;
 
 struct Material
 {
     vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
+    sampler2D diffuse;
+    sampler2D specular;
+    sampler2D normal;
     float shininess;
 };
 
@@ -58,7 +60,7 @@ vec3 CalSpotLight(LightSpot lightSpot, vec3 normal, vec3 viewDir);
 void main()
 {
     //ambient color
-    vec3 ambient = ambientColor * ambientStrength;
+    vec3 ambient = ambientColor * ambientStrength * texture(material.diffuse, TexCoord).rgb;
     
     //directional light    
     vec3 dir_light_color = CalDirLight(lightDir, normal, viewDir);
@@ -73,7 +75,7 @@ void main()
     vec3 spot_light_color = CalSpotLight(lightSpot, normal, viewDir);
 
     //final color
-    vec3 finalColor = (ambient + dir_light_color + point_light_color + spot_light_color) * objColor;
+    vec3 finalColor = (ambient + dir_light_color + point_light_color + spot_light_color);
 
     FragColor = vec4(finalColor, 1.0f);
 }
@@ -85,7 +87,7 @@ vec3 CalDirLight(LightDirectional lightDir, vec3 normal, vec3 viewDir)
     float spec_dir_light = pow(max(dot(viewDir, reflectDir_dir_light), 0), material.shininess);
     vec3 specular_dir_light = specularStrength * spec_dir_light * lightDir.color;  
 
-    return diffuse_dir_light + specular_dir_light;
+    return diffuse_dir_light * texture(material.diffuse, TexCoord).rgb + specular_dir_light * texture(material.specular, TexCoord).rgb;
 }
 
 vec3 CalPointLight(LightPoint lightPoint, vec3 normal, vec3 viewDir)
@@ -98,7 +100,7 @@ vec3 CalPointLight(LightPoint lightPoint, vec3 normal, vec3 viewDir)
     float spec_point_light = pow(max(dot(viewDir, reflectDir_point_light), 0), material.shininess);
     vec3 specular_point_light = specularStrength * spec_point_light * lightPoint.color * lightPointAtten;  
 
-    return diffuse_point_light + specular_point_light;
+    return diffuse_point_light * texture(material.diffuse, TexCoord).rgb + specular_point_light * texture(material.specular, TexCoord).rgb;
 }
 
 vec3 CalSpotLight(LightSpot lightSpot, vec3 normal, vec3 viewDir)
@@ -125,5 +127,5 @@ vec3 CalSpotLight(LightSpot lightSpot, vec3 normal, vec3 viewDir)
         spotRatio = 0.0f;
     }
 
-    return diffuse_spot_light + specular_spot_light;
+    return diffuse_spot_light * texture(material.diffuse, TexCoord).rgb + specular_spot_light * texture(material.specular, TexCoord).rgb;
 }
