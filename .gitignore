@@ -32,3 +32,11 @@
 *.app
 
 .vs
+
+imgui
+glew-2.1.0
+glfw-3.3.6.bin.WIN32
+glm
+
+OpenGL Rendering/packages
+OpenGL Rendering/Debug/model

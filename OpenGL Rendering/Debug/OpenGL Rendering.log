@@ -1,2 +1,3 @@
-﻿  Mesh.cpp
-  OpenGL Rendering.vcxproj -> E:\github repository\OpenGL_Rendering\OpenGL Rendering\Debug\OpenGL Rendering.exe
+﻿  main.cpp
+C:\Users\admin\Documents\GitHub\OpenGL_Rendering\OpenGL Rendering\Model.h(1,1): warning C4819: 该文件包含不能在当前代码页(932)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+  OpenGL Rendering.vcxproj -> C:\Users\admin\Documents\GitHub\OpenGL_Rendering\OpenGL Rendering\Debug\OpenGL Rendering.exe

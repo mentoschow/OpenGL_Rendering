@@ -40,7 +40,6 @@ struct LightSpot
 };
 
 uniform Material material;
-uniform vec3 objColor;
 uniform vec3 ambientColor;
 uniform float ambientStrength;
 uniform vec3 viewPos;

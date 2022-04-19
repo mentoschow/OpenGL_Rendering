@@ -20,8 +20,8 @@ public:
 	float speedZ = 0.0f;
 	float speedX = 0.0f;
 	float speedY = 0.0f;
-	float sensitivityX = 0.001f;
-	float sensitivityY = 0.001f;
+	float sensitivityX = 0.002f;
+	float sensitivityY = 0.002f;
 	float sensitivityMove = 0.05f;
 
 	mat4 GetViewMatrix();

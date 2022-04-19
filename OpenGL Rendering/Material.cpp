@@ -12,4 +12,5 @@ void Material::create_phong(Shaders _shader, glm::vec3 _ambient, glm::vec3 _diff
 	diffuse = _diffuse;
 	specular = _specular;
 	shininess = _shininess;
+	enable = true;
 }
