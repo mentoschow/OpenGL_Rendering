@@ -162,3 +162,40 @@ std::vector<float> CreateCube_Vertex_UV() {
 
 	return temp;
 }
+
+std::vector<float> CreatePlane_Vertex_Normal_UV() {
+	std::vector<float> temp;
+	float plane[] = {
+		// positions            // normals         // texcoords
+		 25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
+		-25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
+		-25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
+
+		 25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
+		-25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
+		 25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,  25.0f, 25.0f
+	};
+
+	for (auto f : plane) {
+		temp.push_back(f);
+	}
+
+	return temp;
+}
+
+std::vector<float> CreateQuad_Vertex_UV() {
+	std::vector<float> temp;
+	float quad[] = {
+		// positions        // texture Coords
+		-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+		-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+		 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+		 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+	};
+
+	for (auto f : quad) {
+		temp.push_back(f);
+	}
+
+	return temp;
+}

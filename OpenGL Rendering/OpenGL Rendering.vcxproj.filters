@@ -167,5 +167,11 @@
     <None Include="BlinnPhong.frag">
       <Filter>资源文件\Shaders\Fragment</Filter>
     </None>
+    <None Include="DirectionalLightShadowMap.frag">
+      <Filter>资源文件\Shaders\Fragment</Filter>
+    </None>
+    <None Include="DirectionalLightShadowMap.vert">
+      <Filter>资源文件\Shaders\Vertex</Filter>
+    </None>
   </ItemGroup>
 </Project>

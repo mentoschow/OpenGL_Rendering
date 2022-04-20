@@ -24,6 +24,8 @@ using namespace glm;
 #pragma region Settings
 const unsigned int SCR_WIDTH = 1920;
 const unsigned int SCR_HEIGHT = 1080;
+const unsigned int SHADOW_WIDTH = 2048;
+const unsigned int SHADOW_HEIGHT = 2048;
 const char* GLSL_VERSION = "#version 420";
 float Gamma = 2.2f;
 const ImVec4 white = ImVec4(1.0, 1.0, 1.0, 1.0);
@@ -57,8 +59,9 @@ ImVec4 ambient_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 float ambient_strength = 0.1f;
 float shininess = 32.0f;
 //directional light
+vec3 light_dir_pos = vec3(0.0f, 0.0f, -1.0f);
 ImVec4 light_dir_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-vec3 light_dir_dir = vec3(0);
+vec3 light_dir_dir = vec3(0.0, 0.0, 0.0);
 LightDirectional lightDirectional(vec3(light_dir_color.x, light_dir_color.y, light_dir_color.z), radians(light_dir_dir));
 //point light
 ImVec4 light_point_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -90,6 +93,7 @@ vector<string> cubemapFaces{
 	"Debug/texture/skybox/front.jpg",
 	"Debug/texture/skybox/back.jpg"
 };
+vector<float> floorPlane = CreatePlane_Vertex_Normal_UV();
 #pragma endregion
 
 
@@ -266,7 +270,7 @@ int main(int argc, char* argv[]) {
 	Shaders lightShader("lightCube.vert", "lightCube.frag");
 	Shaders screenShader("screen.vert", "screen.frag");
 	Shaders skyboxShader("skybox.vert", "skybox.frag");
-	//Shaders emShader("Phong.vert", "EnvironmentMapping.frag");
+	Shaders DirectionalLightShadowMapShader("DirectionalLightShadowMap.vert", "DirectionalLightShadowMap.frag");
 	#pragma endregion
 
 	#pragma region Material
@@ -304,6 +308,23 @@ int main(int argc, char* argv[]) {
 	glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * cube.size(), &cube[0], GL_STATIC_DRAW);
 	
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+
+	//plane
+	unsigned int planeVBO, planeVAO;
+
+	glGenVertexArrays(1, &planeVAO);
+	glBindVertexArray(planeVAO);
+
+	glGenBuffers(1, &planeVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * floorPlane.size(), &floorPlane[0], GL_STATIC_DRAW);
+
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(1);
@@ -352,6 +373,7 @@ int main(int argc, char* argv[]) {
 	#pragma endregion
 
 	#pragma region FBO
+	//fbo to store main render window
 	screenShader.use();
 	screenShader.setInt("screenTexture", 0);
 
@@ -375,6 +397,26 @@ int main(int argc, char* argv[]) {
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	//fbo to store shadow map
+	unsigned int shadowMapFBO;
+	glGenFramebuffers(1, &shadowMapFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
+
+	unsigned int shadowMapTex;
+	glGenTextures(1, &shadowMapTex);
+	glBindTexture(GL_TEXTURE_2D, shadowMapTex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowMapTex, 0);
+	glDrawBuffer(GL_NONE);  //no color attachment
+	glReadBuffer(GL_NONE);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	#pragma endregion
 
 	#pragma region MVP
@@ -382,6 +424,11 @@ int main(int argc, char* argv[]) {
 	ProjectionMat = perspective(radians(45.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);	
 	ModelMat = translate(mat4(1.0f), vec3(0.0f, 0.0f, 0.0f));
 	ModelMat = scale(ModelMat, glm::vec3(1.0f, 1.0f, 1.0f));	
+
+	//shadow map
+	mat4 DirectionalLightProjectionMat = ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 7.5f);
+	mat4 DirectionalLightViewMat;
+	mat4 DirectionalLightShadowMapSpaceMat;
 	#pragma endregion
 
 	//rendering loop
@@ -477,6 +524,23 @@ int main(int argc, char* argv[]) {
 		ImGui::Render();
 		int display_w, display_h;
 		glfwGetFramebufferSize(window, &display_w, &display_h);
+
+		//render shadow map
+		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+		glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
+		glEnable(GL_DEPTH_TEST);
+		glClear(GL_DEPTH_BUFFER_BIT);		
+		DirectionalLightViewMat = lookAt(light_point_pos, vec3(0.0f), vec3(0.0, 1.0, 0.0));
+		DirectionalLightShadowMapSpaceMat = DirectionalLightProjectionMat * DirectionalLightViewMat;
+		DirectionalLightShadowMapShader.use();
+		DirectionalLightShadowMapShader.setMat4("ModelMat", ModelMat);
+		DirectionalLightShadowMapShader.setMat4("DirectionalLightShadowMapSpaceMat", DirectionalLightShadowMapSpaceMat);
+		glBindVertexArray(planeVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glBindVertexArray(cubeVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		//		
 		glViewport(0, 0, display_w, display_h);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, mainFBO);
@@ -491,6 +555,8 @@ int main(int argc, char* argv[]) {
 		shader.setMat4("ModelMat", ModelMat);
 		shader.setMat4("ProjectionMat", ProjectionMat);
 		shader.setMat4("ViewMat", ViewMat);
+		shader.setMat4("DirectionalLightShadowMapSpaceMat", DirectionalLightShadowMapSpaceMat);
+		shader.setInt("shadowMap", 2);
 		if (phong.enable) {
 			shader.setVec3("ambientColor", ambient_color.x, ambient_color.y, ambient_color.z);
 			shader.setFloat("ambientStrength", ambient_strength);
@@ -549,11 +615,16 @@ int main(int argc, char* argv[]) {
 		}
 		#pragma endregion
 
+		glBindVertexArray(planeVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
 		if (phong.enable) {
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, container_diff);
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, container_spec);
+			glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_2D, shadowMapTex);
 		}
 		else if (mirror.enable) {
 			glActiveTexture(GL_TEXTURE0);

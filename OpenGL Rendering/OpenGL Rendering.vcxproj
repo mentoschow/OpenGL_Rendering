@@ -189,6 +189,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="BlinnPhong.frag" />
+    <None Include="DirectionalLightShadowMap.frag" />
+    <None Include="DirectionalLightShadowMap.vert" />
     <None Include="fragment.frag" />
     <None Include="lightCube.frag" />
     <None Include="lightCube.vert" />
