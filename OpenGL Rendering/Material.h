@@ -12,6 +12,8 @@ public:
 	glm::vec3 specular;
 	float shininess;
 
+	bool enable;
+
 	Material();
 	void create_phong(Shaders _shader, glm::vec3 _ambient, glm::vec3 _diffuse, glm::vec3 _specular, float _shininess);
 

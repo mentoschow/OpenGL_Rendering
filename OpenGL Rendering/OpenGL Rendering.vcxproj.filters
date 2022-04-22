@@ -125,6 +125,9 @@
     <ClInclude Include="LightSpot.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Geometries.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="vertex.vert">
@@ -133,7 +136,6 @@
     <None Include="fragment.frag">
       <Filter>资源文件\Shaders\Fragment</Filter>
     </None>
-    <None Include="packages.config" />
     <None Include="Phong.frag">
       <Filter>资源文件\Shaders\Fragment</Filter>
     </None>
@@ -151,6 +153,25 @@
     </None>
     <None Include="screen.frag">
       <Filter>资源文件\Shaders\Fragment</Filter>
+    </None>
+    <None Include="packages.config" />
+    <None Include="skybox.frag">
+      <Filter>资源文件\Shaders\Fragment</Filter>
+    </None>
+    <None Include="skybox.vert">
+      <Filter>资源文件\Shaders\Vertex</Filter>
+    </None>
+    <None Include="EnvironmentMapping.frag">
+      <Filter>资源文件\Shaders\Fragment</Filter>
+    </None>
+    <None Include="BlinnPhong.frag">
+      <Filter>资源文件\Shaders\Fragment</Filter>
+    </None>
+    <None Include="DirectionalLightShadowMap.frag">
+      <Filter>资源文件\Shaders\Fragment</Filter>
+    </None>
+    <None Include="DirectionalLightShadowMap.vert">
+      <Filter>资源文件\Shaders\Vertex</Filter>
     </None>
   </ItemGroup>
 </Project>

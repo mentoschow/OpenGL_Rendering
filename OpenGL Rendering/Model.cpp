@@ -23,12 +23,12 @@ void Model::LoadModel(string path)
 		cout << "Load model failed." << endl;
 		return;
 	}
-	directory = path.substr(0, path.find_last_of('/'));  //一道杠是转义字符
-	cout << "Load model Success! " << directory << endl;
+	directory = path.substr(0, path.find_last_of('/'));  //一道杠是转义字穪E
 	processNode(scene->mRootNode, scene);
+	cout << "Load model Success! " << directory << endl;
 }
 
-void Model::processNode(aiNode* node, const aiScene* scene)  //广度优先探索
+void Model::processNode(aiNode* node, const aiScene* scene)  //广度优先探藖E
 {
 	for (unsigned int i = 0; i < node->mNumMeshes; i++) {
 		aiMesh* currentMeshes = scene->mMeshes[node->mMeshes[i]];
