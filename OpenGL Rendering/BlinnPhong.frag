@@ -17,8 +17,10 @@ struct Material
 
 struct LightDirectional
 {
+    vec3 pos;
     vec3 dir;
     vec3 color;
+    float strength;
 };
 
 struct LightPoint
@@ -54,10 +56,10 @@ float spotRatio;
 vec3 normal = normalize(Normal);
 vec3 viewDir = normalize(viewPos - FragPos);   
 
-vec3 CalDirLight(LightDirectional lightDir, vec3 normal, vec3 viewDir);
-vec3 CalPointLight(LightPoint lightPoint, vec3 normal, vec3 viewDir);
-vec3 CalSpotLight(LightSpot lightSpot, vec3 normal, vec3 viewDir);
-float ShadowCal(vec4 FragPos2LightSpace);
+vec3 CalDirLight(LightDirectional lightDir, vec3 viewDir);
+vec3 CalPointLight(LightPoint lightPoint, vec3 viewDir);
+vec3 CalSpotLight(LightSpot lightSpot, vec3 viewDir);
+float ShadowCal(vec4 FragPos2LightSpace, vec3 lightDir);
 
 void main()
 {
@@ -65,16 +67,16 @@ void main()
     vec3 ambient = ambientColor * ambientStrength * texture(material.diffuse, TexCoord).rgb;
     
     //directional light    
-    vec3 dir_light_color = CalDirLight(lightDir, normal, viewDir);
+    vec3 dir_light_color = CalDirLight(lightDir, viewDir);
 
     //point light   
     vec3 point_light_color;
     for(int i = 6; i < NR_POINT_LIGHT; i++){
     }
-        point_light_color += CalPointLight(lightPoint[0], normal, viewDir);
+        point_light_color += CalPointLight(lightPoint[0], viewDir);
     
     //spot light   
-    vec3 spot_light_color = CalSpotLight(lightSpot, normal, viewDir);  
+    vec3 spot_light_color = CalSpotLight(lightSpot, viewDir);  
 
     //final color
     vec3 finalColor = (ambient + (dir_light_color + point_light_color + spot_light_color));
@@ -82,18 +84,19 @@ void main()
     FragColor = vec4(finalColor, 1.0f);
 }
 
-vec3 CalDirLight(LightDirectional lightDir, vec3 normal, vec3 viewDir)
+vec3 CalDirLight(LightDirectional lightDir, vec3 viewDir)
 {
-    vec3 diffuse_dir_light = max(dot(lightDir.dir, normal), 0) * lightDir.color;
-    vec3 halfDir = normalize(lightDir.dir + viewDir);
+    vec3 lightDirDir = normalize(lightDir.pos - FragPos);
+    vec3 diffuse_dir_light = max(dot(lightDirDir, normal), 0) * lightDir.color;
+    vec3 halfDir = normalize(lightDirDir + viewDir);
     float spec_dir_light = pow(max(dot(normal, halfDir), 0), material.shininess * 2);
     vec3 specular_dir_light = specularStrength * spec_dir_light * lightDir.color;  
-    
+    float shadow = ShadowCal(FragPosToLightSpace, lightDirDir);
 
-    return (diffuse_dir_light + specular_dir_light) * texture(material.specular, TexCoord).rgb;
+    return (1.0 - shadow) * (diffuse_dir_light + specular_dir_light) * texture(material.specular, TexCoord).rgb * lightDir.strength;
 }
 
-vec3 CalPointLight(LightPoint lightPoint, vec3 normal, vec3 viewDir)
+vec3 CalPointLight(LightPoint lightPoint, vec3 viewDir)
 {
     vec3 lightPointDir = normalize(lightPoint.pos - FragPos);
     float lightPointDistance = length(lightPoint.pos - FragPos);
@@ -102,12 +105,12 @@ vec3 CalPointLight(LightPoint lightPoint, vec3 normal, vec3 viewDir)
     vec3 halfDir = normalize(lightPointDir + viewDir);
     float spec_point_light = pow(max(dot(normal, halfDir), 0), material.shininess * 2);
     vec3 specular_point_light = specularStrength * spec_point_light * lightPoint.color * lightPointAtten;  
-    float shadow = ShadowCal(FragPosToLightSpace);
+    //float shadow = ShadowCal(FragPosToLightSpace);
 
-    return (1.0 - shadow) * (diffuse_point_light + specular_point_light) * texture(material.specular, TexCoord).rgb;
+    return (diffuse_point_light + specular_point_light) * texture(material.specular, TexCoord).rgb;
 }
 
-vec3 CalSpotLight(LightSpot lightSpot, vec3 normal, vec3 viewDir)
+vec3 CalSpotLight(LightSpot lightSpot, vec3 viewDir)
 {
     vec3 lightSpotDir = normalize(lightSpot.pos - FragPos);
     float cosTheta = dot(-lightSpotDir, lightSpot.dir);    
@@ -134,13 +137,29 @@ vec3 CalSpotLight(LightSpot lightSpot, vec3 normal, vec3 viewDir)
     return (diffuse_spot_light + specular_spot_light) * texture(material.specular, TexCoord).rgb;
 }
 
-float ShadowCal(vec4 FragPos2LightSpace)
+float ShadowCal(vec4 FragPos2LightSpace, vec3 lightDir)
 {
     vec3 projCoords = FragPos2LightSpace.xyz / FragPos2LightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
-    float closestDepth = texture(shadowMap, projCoords.xy).r;
     float currentDepth = projCoords.z;
-    float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
+    float bias = max(0.04 * (1 - dot(normal, lightDir)), 0.004);
+    float shadow;
+    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+
+    for(int x = -1; x <= 1; x++)
+    {
+        for(int y = -1; y <= 1; y++)
+        {
+            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
+            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+        }
+    }
+    shadow /= 9.0;
+   
+    if(projCoords.z > 1.0)
+    {
+        shadow = 0;
+    }
 
     return shadow;
 }

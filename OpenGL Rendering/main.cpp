@@ -59,10 +59,9 @@ ImVec4 ambient_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 float ambient_strength = 0.1f;
 float shininess = 32.0f;
 //directional light
-vec3 light_dir_pos = vec3(0.0f, 0.0f, -1.0f);
 ImVec4 light_dir_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-vec3 light_dir_dir = vec3(0.0, 0.0, 0.0);
-LightDirectional lightDirectional(vec3(light_dir_color.x, light_dir_color.y, light_dir_color.z), radians(light_dir_dir));
+float lightDirStr = 0.5f;
+LightDirectional lightDirectional(vec3(-3.0f, 3.0f, -3.0f), vec3(light_dir_color.x, light_dir_color.y, light_dir_color.z), radians(vec3(45.0, 45.0, 0.0)), lightDirStr);
 //point light
 ImVec4 light_point_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 vec3 light_point_pos = vec3(0, 3, 3);
@@ -409,8 +408,10 @@ int main(int argc, char* argv[]) {
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	GLfloat border[] = { 1.0, 1.0, 1.0, 1.0 };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowMapTex, 0);
 	glDrawBuffer(GL_NONE);  //no color attachment
 	glReadBuffer(GL_NONE);
@@ -471,9 +472,7 @@ int main(int argc, char* argv[]) {
 				ImGui::Checkbox("Directional Light", &lightDirectional.enable);
 				if (lightDirectional.enable) {
 					ImGui::ColorEdit3("Directional light color", (float*)&light_dir_color);
-					ImGui::SliderFloat("Directional light direction x", &light_dir_dir.x, -180.0f, 180.0f);
-					ImGui::SliderFloat("Directional light direction y", &light_dir_dir.y, -180.0f, 180.0f);
-					ImGui::SliderFloat("Directional light direction z", &light_dir_dir.z, -180.0f, 180.0f);
+					ImGui::SliderFloat("Directional light Strength", &lightDirStr, 0.0f, 1.0f);
 				}
 			}
 			if (ImGui::CollapsingHeader("Point Light Settings")) {
@@ -530,7 +529,7 @@ int main(int argc, char* argv[]) {
 		glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
 		glEnable(GL_DEPTH_TEST);
 		glClear(GL_DEPTH_BUFFER_BIT);		
-		DirectionalLightViewMat = lookAt(light_point_pos, vec3(0.0f), vec3(0.0, 1.0, 0.0));
+		DirectionalLightViewMat = lookAt(lightDirectional.Position, vec3(0.0f), vec3(0.0, 1.0, 0.0));
 		DirectionalLightShadowMapSpaceMat = DirectionalLightProjectionMat * DirectionalLightViewMat;
 		DirectionalLightShadowMapShader.use();
 		DirectionalLightShadowMapShader.setMat4("ModelMat", ModelMat);
@@ -556,6 +555,7 @@ int main(int argc, char* argv[]) {
 		shader.setMat4("ProjectionMat", ProjectionMat);
 		shader.setMat4("ViewMat", ViewMat);
 		shader.setMat4("DirectionalLightShadowMapSpaceMat", DirectionalLightShadowMapSpaceMat);
+		shader.setVec3("lightDir.pos", lightDirectional.Position.x, lightDirectional.Position.y, lightDirectional.Position.z);
 		shader.setInt("shadowMap", 2);
 		if (phong.enable) {
 			shader.setVec3("ambientColor", ambient_color.x, ambient_color.y, ambient_color.z);
@@ -569,15 +569,17 @@ int main(int argc, char* argv[]) {
 		}
 
 		if (lightDirectional.enable) {
-			lightDirectional.UpdateDirectionalLight(vec3(light_dir_color.x, light_dir_color.y, light_dir_color.z), radians(light_dir_dir));
+			lightDirectional.UpdateDirectionalLightColor(vec3(light_dir_color.x, light_dir_color.y, light_dir_color.z));
+			lightDirectional.UpdateDirectionalLightStrength(lightDirStr);
 			shader.setVec3("lightDir.color", lightDirectional.Color.x, lightDirectional.Color.y, lightDirectional.Color.z);
-			shader.setVec3("lightDir.dir", lightDirectional.Direction.x, lightDirectional.Direction.y, lightDirectional.Direction.z);
+			shader.setFloat("lightDir.strength", lightDirectional.Strength);
 		}
 		else {
 			light_dir_color = black;
-			lightDirectional.UpdateDirectionalLight(vec3(light_dir_color.x, light_dir_color.y, light_dir_color.z), radians(light_dir_dir));
+			lightDirectional.UpdateDirectionalLightColor(vec3(light_dir_color.x, light_dir_color.y, light_dir_color.z));
+			lightDirectional.UpdateDirectionalLightStrength(lightDirStr);
 			shader.setVec3("lightDir.color", lightDirectional.Color.x, lightDirectional.Color.y, lightDirectional.Color.z);
-			shader.setVec3("lightDir.dir", lightDirectional.Direction.x, lightDirectional.Direction.y, lightDirectional.Direction.z);
+			shader.setFloat("lightDir.strength", lightDirectional.Strength);
 		}
 		if (lightPoint.enable) {
 			lightPoint.UpdateLightPoint(light_point_pos, vec3(light_point_color.x, light_point_color.y, light_point_color.z));
