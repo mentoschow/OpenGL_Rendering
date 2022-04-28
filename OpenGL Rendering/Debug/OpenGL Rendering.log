@@ -1,4 +1,22 @@
-﻿  main.cpp
+﻿  imgui.cpp
+  imgui_demo.cpp
+  imgui_draw.cpp
+  imgui_impl_glfw.cpp
+  imgui_impl_opengl3.cpp
+  imgui_tables.cpp
+  imgui_widgets.cpp
+  Camera.cpp
+  LightDirectional.cpp
+  LightPoint.cpp
+  LightSpot.cpp
+  main.cpp
+C:\Users\admin\Documents\GitHub\OpenGL_Rendering\OpenGL Rendering\Model.h(1,1): warning C4819: 该文件包含不能在当前代码页(932)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+  Material.cpp
+  Mesh.cpp
+  Model.cpp
+C:\Users\admin\Documents\GitHub\OpenGL_Rendering\OpenGL Rendering\Model.h(1,1): warning C4819: 该文件包含不能在当前代码页(932)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+  Shaders.cpp
+  正在生成代码...
 LINK : warning LNK4098: 默认库“MSVCRT”与其他库的使用冲突；请使用 /NODEFAULTLIB:library
 LINK : warning LNK4098: 默认库“LIBCMT”与其他库的使用冲突；请使用 /NODEFAULTLIB:library
 LINK : warning LNK4217: 符号“___glewActiveTexture”(在“ glew32s.lib(glew.obj)”中定义)已由“imgui_impl_opengl3.obj”(函数“"void __cdecl ImGui_ImplOpenGL3_RenderDrawData(struct ImDrawData *)" (?ImGui_ImplOpenGL3_RenderDrawData@@YAXPAUImDrawData@@@Z)”中)导入
@@ -34,5 +52,5 @@ LINK : warning LNK4217: 符号“___glewBindSampler”(在“ glew32s.lib(glew.o
 LINK : warning LNK4217: 符号“___glewBindVertexArray”(在“ glew32s.lib(glew.obj)”中定义)已由“imgui_impl_opengl3.obj”(函数“"bool __cdecl ImGui_ImplOpenGL3_CreateDeviceObjects(void)" (?ImGui_ImplOpenGL3_CreateDeviceObjects@@YA_NXZ)”中)导入
 LINK : warning LNK4217: 符号“___glewDeleteVertexArrays”(在“ glew32s.lib(glew.obj)”中定义)已由“imgui_impl_opengl3.obj”(函数“"void __cdecl ImGui_ImplOpenGL3_RenderDrawData(struct ImDrawData *)" (?ImGui_ImplOpenGL3_RenderDrawData@@YAXPAUImDrawData@@@Z)”中)导入
 LINK : warning LNK4217: 符号“___glewGenVertexArrays”(在“ glew32s.lib(glew.obj)”中定义)已由“imgui_impl_opengl3.obj”(函数“"void __cdecl ImGui_ImplOpenGL3_RenderDrawData(struct ImDrawData *)" (?ImGui_ImplOpenGL3_RenderDrawData@@YAXPAUImDrawData@@@Z)”中)导入
-glew32s.lib(glew.obj) : warning LNK4099: 未找到 PDB“vc120.pdb”(使用“glew32s.lib(glew.obj)”或在“E:\github repository\OpenGL_Rendering\OpenGL Rendering\Debug\vc120.pdb”中寻找)；正在链接对象，如同没有调试信息一样
-  OpenGL Rendering.vcxproj -> E:\github repository\OpenGL_Rendering\OpenGL Rendering\Debug\OpenGL Rendering.exe
+glew32s.lib(glew.obj) : warning LNK4099: 未找到 PDB“vc120.pdb”(使用“glew32s.lib(glew.obj)”或在“C:\Users\admin\Documents\GitHub\OpenGL_Rendering\OpenGL Rendering\Debug\vc120.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+  OpenGL Rendering.vcxproj -> C:\Users\admin\Documents\GitHub\OpenGL_Rendering\OpenGL Rendering\Debug\OpenGL Rendering.exe

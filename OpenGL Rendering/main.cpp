@@ -1,3 +1,4 @@
+#pragma region Headfiles
 #include <iostream>
 #define GLEW_STATIC
 #include <GL/glew.h>
@@ -17,6 +18,7 @@
 #include "LightSpot.h"
 #include "Model.h"
 #include "Geometries.h"
+#pragma endregion
 
 using namespace std;
 using namespace glm;
@@ -286,11 +288,14 @@ int main(int argc, char* argv[]) {
 
 	#pragma region Texture
 	unsigned int container_diff, container_spec;
-	container_diff = LoadTextures("Debug/texture/container2.png", 0);
-	container_spec = LoadTextures("Debug/texture/container2_specular.png", 1);
+	unsigned int brickwall_diffuse, brickwall_normal;
+	//container_diff = LoadTextures("Debug/texture/container2.png", 0);
+	//container_spec = LoadTextures("Debug/texture/container2_specular.png", 1);
+	brickwall_diffuse = LoadTextures("Debug/texture/brickwall.jpg", 0);
+	brickwall_normal = LoadTextures("Debug/texture/brickwall_normal.jpg", 1);
 	shader.use();
 	shader.setInt("material.diffuse", 0);
-	shader.setInt("material.specular", 1);
+	shader.setInt("material.normal", 1);
 
 	//cubemap
 	unsigned int skyboxTex = LoadCubemap(cubemapFaces);

@@ -1,10 +1,12 @@
 #version 420 core
 out vec4 FragColor;
 
-in vec3 Normal;
-in vec3 FragPos;
-in vec2 TexCoord;
-in vec4 FragPosToLightSpace;
+in VS_OUT{
+    vec3 Normal;
+    vec3 FragPos;
+    vec2 TexCoord;
+    vec4 FragPosToLightSpace;
+} fs_in;
 
 struct Material
 {
@@ -55,8 +57,8 @@ uniform samplerCube shadowCubeMap;
 
 float specularStrength = 0.5f;
 float spotRatio;
-vec3 normal = normalize(Normal);
-vec3 viewDir = normalize(viewPos - FragPos);   
+vec3 normal = normalize(fs_in.Normal);
+vec3 viewDir = normalize(viewPos - fs_in.FragPos);   
 float farPlane = 25.0f;
 vec3 gridSamplingDisk[20] = vec3[]
 (
@@ -76,7 +78,7 @@ float ShadowCubeMapCal(vec3 fragPos, vec3 lightPos);
 void main()
 {
     //ambient color
-    vec3 ambient = ambientColor * ambientStrength * texture(material.diffuse, TexCoord).rgb;
+    vec3 ambient = ambientColor * ambientStrength * texture(material.diffuse, fs_in.TexCoord).rgb;
     
     //directional light    
     vec3 dir_light_color = CalDirLight(lightDir, viewDir);
@@ -98,33 +100,33 @@ void main()
 
 vec3 CalDirLight(LightDirectional lightDir, vec3 viewDir)
 {
-    vec3 lightDirDir = normalize(lightDir.pos - FragPos);
+    vec3 lightDirDir = normalize(lightDir.pos - fs_in.FragPos);
     vec3 diffuse_dir_light = max(dot(lightDirDir, normal), 0) * lightDir.color;
     vec3 halfDir = normalize(lightDirDir + viewDir);
     float spec_dir_light = pow(max(dot(normal, halfDir), 0), material.shininess * 2);
     vec3 specular_dir_light = specularStrength * spec_dir_light * lightDir.color;  
-    float shadow = ShadowCal(FragPosToLightSpace, lightDirDir);
+    float shadow = ShadowCal(fs_in.FragPosToLightSpace, lightDirDir);
 
-    return (1.0 - shadow) * (diffuse_dir_light + specular_dir_light) * texture(material.specular, TexCoord).rgb * lightDir.strength;
+    return (1.0 - shadow) * (diffuse_dir_light + specular_dir_light) * texture(material.specular, fs_in.TexCoord).rgb * lightDir.strength;
 }
 
 vec3 CalPointLight(LightPoint lightPoint, vec3 viewDir)
 {
-    vec3 lightPointDir = normalize(lightPoint.pos - FragPos);
-    float lightPointDistance = length(lightPoint.pos - FragPos);
+    vec3 lightPointDir = normalize(lightPoint.pos - fs_in.FragPos);
+    float lightPointDistance = length(lightPoint.pos - fs_in.FragPos);
     float lightPointAtten = 1.0 / (lightPoint.constant + lightPoint.linear * lightPointDistance + lightPoint.quadratic * (lightPointDistance * lightPointDistance));
     vec3 diffuse_point_light = max(dot(lightPointDir, normal), 0) * lightPoint.color * lightPointAtten;
     vec3 halfDir = normalize(lightPointDir + viewDir);
     float spec_point_light = pow(max(dot(normal, halfDir), 0), material.shininess * 2);
     vec3 specular_point_light = specularStrength * spec_point_light * lightPoint.color * lightPointAtten;  
-    float shadow = ShadowCubeMapCal(FragPos, lightPoint.pos);
+    float shadow = ShadowCubeMapCal(fs_in.FragPos, lightPoint.pos);
 
-    return (1.0 - shadow) * (diffuse_point_light + specular_point_light) * texture(material.specular, TexCoord).rgb * lightPoint.strength;
+    return (1.0 - shadow) * (diffuse_point_light + specular_point_light) * texture(material.specular, fs_in.TexCoord).rgb * lightPoint.strength;
 }
 
 vec3 CalSpotLight(LightSpot lightSpot, vec3 viewDir)
 {
-    vec3 lightSpotDir = normalize(lightSpot.pos - FragPos);
+    vec3 lightSpotDir = normalize(lightSpot.pos - fs_in.FragPos);
     float cosTheta = dot(-lightSpotDir, lightSpot.dir);    
     vec3 diffuse_spot_light = max(dot(lightSpotDir, normal), 0) * lightSpot.color;
     vec3 halfDir = normalize(lightSpotDir + viewDir);
@@ -146,7 +148,7 @@ vec3 CalSpotLight(LightSpot lightSpot, vec3 viewDir)
         spotRatio = 0.0f;
     }
 
-    return (diffuse_spot_light + specular_spot_light) * texture(material.specular, TexCoord).rgb;
+    return (diffuse_spot_light + specular_spot_light) * texture(material.specular, fs_in.TexCoord).rgb;
 }
 
 float ShadowCal(vec4 FragPos2LightSpace, vec3 lightDir)
