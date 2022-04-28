@@ -63,6 +63,7 @@ ImVec4 light_dir_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 float lightDirStr = 0.5f;
 LightDirectional lightDirectional(vec3(-3.0f, 3.0f, -3.0f), vec3(light_dir_color.x, light_dir_color.y, light_dir_color.z), radians(vec3(45.0, 45.0, 0.0)), lightDirStr);
 //point light
+float lightPointStr = 0.5f;
 ImVec4 light_point_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 vec3 light_point_pos = vec3(0, 3, 3);
 LightPoint lightPoint(light_point_pos, vec3(light_point_color.x, light_point_color.y, light_point_color.z));
@@ -265,11 +266,12 @@ int main(int argc, char* argv[]) {
 	#pragma endregion	
 
 	#pragma region Shaders
-	Shaders shader("Phong.vert", "Phong.frag");
-	Shaders lightShader("lightCube.vert", "lightCube.frag");
-	Shaders screenShader("screen.vert", "screen.frag");
-	Shaders skyboxShader("skybox.vert", "skybox.frag");
-	Shaders DirectionalLightShadowMapShader("DirectionalLightShadowMap.vert", "DirectionalLightShadowMap.frag");
+	Shaders shader("Phong.vert", "Phong.frag", nullptr);
+	Shaders lightShader("lightCube.vert", "lightCube.frag", nullptr);
+	Shaders screenShader("screen.vert", "screen.frag", nullptr);
+	Shaders skyboxShader("skybox.vert", "skybox.frag", nullptr);
+	Shaders DirectionalLightShadowMapShader("DirectionalLightShadowMap.vert", "DirectionalLightShadowMap.frag", nullptr);
+	Shaders PointLightShadowMapShader("PointLightShadowMap.vert", "PointLightShadowMap.frag", "PointLightShadowMap.geom");
 	#pragma endregion
 
 	#pragma region Material
@@ -418,6 +420,29 @@ int main(int argc, char* argv[]) {
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	//fbo to store shadow cubemap
+	unsigned int shadowCubeMapFBO;
+	glGenFramebuffers(1, &shadowCubeMapFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, shadowCubeMapFBO);
+
+	unsigned int shadowCubeMapTex;
+	glGenTextures(1, &shadowCubeMapTex);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, shadowCubeMapTex);
+	for (unsigned int i = 0; i < 6; i++) {
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowCubeMapTex, 0);
+	glDrawBuffer(GL_NONE);  //no color attachment
+	glReadBuffer(GL_NONE);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	#pragma endregion
 
 	#pragma region MVP
@@ -430,6 +455,9 @@ int main(int argc, char* argv[]) {
 	mat4 DirectionalLightProjectionMat = ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 7.5f);
 	mat4 DirectionalLightViewMat;
 	mat4 DirectionalLightShadowMapSpaceMat;
+
+	//shadow cubemap
+	mat4 PointLightProjectionMat = perspective(radians(90.0f), (float)SHADOW_WIDTH / SHADOW_HEIGHT, 1.0f, 25.0f);
 	#pragma endregion
 
 	//rendering loop
@@ -451,19 +479,19 @@ int main(int argc, char* argv[]) {
 		
 		ImGui::Text("Rendering Type");
 		if (ImGui::Button("Phong Model")) {
-			shader.reloadShader(&shader.ID, "Phong.vert", "Phong.frag");
+			shader.reloadShader(&shader.ID, "Phong.vert", "Phong.frag", nullptr);
 			phong.enable = true;
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Blinn Phong Model")) {
-			shader.reloadShader(&shader.ID, "Phong.vert", "BlinnPhong.frag");
+			shader.reloadShader(&shader.ID, "Phong.vert", "BlinnPhong.frag", nullptr);
 			phong.enable = true;
 		}
 		ImGui::SameLine();
 		ImGui::Checkbox("Phong Model Settings", &show_phong_settings);
 
 		if (ImGui::Button("Environment Mapping")) {
-			shader.reloadShader(&shader.ID, "Phong.vert", "EnvironmentMapping.frag");
+			shader.reloadShader(&shader.ID, "Phong.vert", "EnvironmentMapping.frag", nullptr);
 			phong.enable = false;
 			mirror.enable = true;
 		}
@@ -482,6 +510,7 @@ int main(int argc, char* argv[]) {
 					ImGui::SliderFloat("Point light position x", &light_point_pos.x, -5.0f, 5.0f);
 					ImGui::SliderFloat("Point light position y", &light_point_pos.y, -5.0f, 5.0f);
 					ImGui::SliderFloat("Point light position z", &light_point_pos.z, -5.0f, 5.0f);
+					ImGui::SliderFloat("Point light Strength", &lightPointStr, 0.0f, 1.0f);
 				}
 			}
 			if (ImGui::CollapsingHeader("Spot Light Settings")) {
@@ -539,7 +568,33 @@ int main(int argc, char* argv[]) {
 		glBindVertexArray(cubeVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		//		
+		//render shadow cubemap
+		if (lightPoint.enable) {
+			glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+			glBindFramebuffer(GL_FRAMEBUFFER, shadowCubeMapFBO);
+			glEnable(GL_DEPTH_TEST);
+			glClear(GL_DEPTH_BUFFER_BIT);
+			lightPoint.UpdateLightPoint(light_point_pos, vec3(light_point_color.x, light_point_color.y, light_point_color.z));
+			vector<mat4> PointLightShadowSpaceMat;
+			PointLightShadowSpaceMat.push_back(PointLightProjectionMat * lookAt(lightPoint.Position, lightPoint.Position + vec3(1, 0, 0), vec3(0, -1, 0)));
+			PointLightShadowSpaceMat.push_back(PointLightProjectionMat * lookAt(lightPoint.Position, lightPoint.Position + vec3(-1, 0, 0), vec3(0, -1, 0)));
+			PointLightShadowSpaceMat.push_back(PointLightProjectionMat * lookAt(lightPoint.Position, lightPoint.Position + vec3(0, 1, 0), vec3(0, 0, 1)));
+			PointLightShadowSpaceMat.push_back(PointLightProjectionMat * lookAt(lightPoint.Position, lightPoint.Position + vec3(0, -1, 0), vec3(0, 0, -1)));
+			PointLightShadowSpaceMat.push_back(PointLightProjectionMat * lookAt(lightPoint.Position, lightPoint.Position + vec3(0, 0, 1), vec3(0, -1, 0)));
+			PointLightShadowSpaceMat.push_back(PointLightProjectionMat * lookAt(lightPoint.Position, lightPoint.Position + vec3(0, 0, -1), vec3(0, -1, 0)));
+			PointLightShadowMapShader.use();
+			for (unsigned int i = 0; i < 6; i++) {
+				PointLightShadowMapShader.setMat4(("shadowSpaceMat[" + to_string(i) + "]").c_str(), PointLightShadowSpaceMat[i]);
+			}
+			PointLightShadowMapShader.setMat4("ModelMat", ModelMat);
+			PointLightShadowMapShader.setVec3("lightPos", lightPoint.Position.x, lightPoint.Position.y, lightPoint.Position.z);
+			glBindVertexArray(planeVAO);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+			glBindVertexArray(cubeVAO);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}		
+
+		//render main scene
 		glViewport(0, 0, display_w, display_h);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, mainFBO);
@@ -557,6 +612,7 @@ int main(int argc, char* argv[]) {
 		shader.setMat4("DirectionalLightShadowMapSpaceMat", DirectionalLightShadowMapSpaceMat);
 		shader.setVec3("lightDir.pos", lightDirectional.Position.x, lightDirectional.Position.y, lightDirectional.Position.z);
 		shader.setInt("shadowMap", 2);
+		shader.setInt("shadowCubeMap", 3);
 		if (phong.enable) {
 			shader.setVec3("ambientColor", ambient_color.x, ambient_color.y, ambient_color.z);
 			shader.setFloat("ambientStrength", ambient_strength);
@@ -588,6 +644,7 @@ int main(int argc, char* argv[]) {
 			shader.setFloat("lightPoint[0].constant", lightPoint.constant);
 			shader.setFloat("lightPoint[0].linear", lightPoint.linear);
 			shader.setFloat("lightPoint[0].quadratic", lightPoint.quadratic);
+			shader.setFloat("lightPoint[0].strength", lightPointStr);
 		}
 		else {
 			light_point_color = black;
@@ -597,6 +654,7 @@ int main(int argc, char* argv[]) {
 			shader.setFloat("lightPoint[0].constant", lightPoint.constant);
 			shader.setFloat("lightPoint[0].linear", lightPoint.linear);
 			shader.setFloat("lightPoint[0].quadratic", lightPoint.quadratic);
+			shader.setFloat("lightPoint[0].strength", lightPointStr);
 		}
 		if (lightSpot.enable) {
 			lightSpot.UpdateLightSpot(light_spot_pos, radians(light_spot_dir), vec3(light_spot_color.x, light_spot_color.y, light_spot_color.z), light_spot_cosphy_in, light_spot_cosphy_out);
@@ -627,6 +685,8 @@ int main(int argc, char* argv[]) {
 			glBindTexture(GL_TEXTURE_2D, container_spec);
 			glActiveTexture(GL_TEXTURE2);
 			glBindTexture(GL_TEXTURE_2D, shadowMapTex);
+			glActiveTexture(GL_TEXTURE3);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, shadowCubeMapTex);
 		}
 		else if (mirror.enable) {
 			glActiveTexture(GL_TEXTURE0);

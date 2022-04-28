@@ -198,6 +198,9 @@
     <None Include="packages.config" />
     <None Include="Phong.frag" />
     <None Include="Phong.vert" />
+    <None Include="PointLightShadowMap.frag" />
+    <None Include="PointLightShadowMap.geom" />
+    <None Include="PointLightShadowMap.vert" />
     <None Include="screen.frag" />
     <None Include="screen.vert" />
     <None Include="skybox.frag" />

@@ -25,6 +25,9 @@
     <Filter Include="资源文件\Shaders\Fragment">
       <UniqueIdentifier>{2d636eef-511d-49ab-85cc-cd4072d6ea48}</UniqueIdentifier>
     </Filter>
+    <Filter Include="资源文件\Shaders\Geometry">
+      <UniqueIdentifier>{cbdd5352-55b1-4435-af18-758cafcdd38e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -172,6 +175,15 @@
     </None>
     <None Include="DirectionalLightShadowMap.vert">
       <Filter>资源文件\Shaders\Vertex</Filter>
+    </None>
+    <None Include="PointLightShadowMap.vert">
+      <Filter>资源文件\Shaders\Vertex</Filter>
+    </None>
+    <None Include="PointLightShadowMap.frag">
+      <Filter>资源文件\Shaders\Fragment</Filter>
+    </None>
+    <None Include="PointLightShadowMap.geom">
+      <Filter>资源文件\Shaders\Geometry</Filter>
     </None>
   </ItemGroup>
 </Project>

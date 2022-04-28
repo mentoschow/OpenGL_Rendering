@@ -30,6 +30,7 @@ struct LightPoint
     float constant;
     float linear;
     float quadratic;
+    float strength;
 };
 #define NR_POINT_LIGHT 6
 
@@ -50,16 +51,27 @@ uniform LightDirectional lightDir;
 uniform LightPoint lightPoint[NR_POINT_LIGHT];
 uniform LightSpot lightSpot;
 uniform sampler2D shadowMap;
+uniform samplerCube shadowCubeMap;
 
 float specularStrength = 0.5f;
 float spotRatio;
 vec3 normal = normalize(Normal);
 vec3 viewDir = normalize(viewPos - FragPos);   
+float farPlane = 25.0f;
+vec3 gridSamplingDisk[20] = vec3[]
+(
+   vec3(1, 1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1, 1,  1), 
+   vec3(1, 1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1, 1, -1),
+   vec3(1, 1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1, 1,  0),
+   vec3(1, 0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1, 0, -1),
+   vec3(0, 1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0, 1, -1)
+);
 
 vec3 CalDirLight(LightDirectional lightDir, vec3 viewDir);
 vec3 CalPointLight(LightPoint lightPoint, vec3 viewDir);
 vec3 CalSpotLight(LightSpot lightSpot, vec3 viewDir);
 float ShadowCal(vec4 FragPos2LightSpace, vec3 lightDir);
+float ShadowCubeMapCal(vec3 fragPos, vec3 lightPos);
 
 void main()
 {
@@ -105,9 +117,9 @@ vec3 CalPointLight(LightPoint lightPoint, vec3 viewDir)
     vec3 halfDir = normalize(lightPointDir + viewDir);
     float spec_point_light = pow(max(dot(normal, halfDir), 0), material.shininess * 2);
     vec3 specular_point_light = specularStrength * spec_point_light * lightPoint.color * lightPointAtten;  
-    //float shadow = ShadowCal(FragPosToLightSpace);
+    float shadow = ShadowCubeMapCal(FragPos, lightPoint.pos);
 
-    return (diffuse_point_light + specular_point_light) * texture(material.specular, TexCoord).rgb;
+    return (1.0 - shadow) * (diffuse_point_light + specular_point_light) * texture(material.specular, TexCoord).rgb * lightPoint.strength;
 }
 
 vec3 CalSpotLight(LightSpot lightSpot, vec3 viewDir)
@@ -160,6 +172,27 @@ float ShadowCal(vec4 FragPos2LightSpace, vec3 lightDir)
     {
         shadow = 0;
     }
+
+    return shadow;
+}
+
+float ShadowCubeMapCal(vec3 fragPos, vec3 lightPos)
+{
+    vec3 lightDir = fragPos - lightPos;
+    float currentDepth = length(lightDir);
+    float shadow;
+    float _bias = 0.15;
+    int samples = 20;
+    float viewDistance = length(viewPos - fragPos);
+    float diskRadius = (1.0 + (viewDistance / farPlane)) / 25.0;
+    for(int i = 0; i < samples; ++i)
+    {
+        float closestDepth = texture(shadowCubeMap, lightDir + gridSamplingDisk[i] * diskRadius).r;
+        closestDepth *= farPlane;   // undo mapping [0;1]
+        if(currentDepth - _bias > closestDepth)
+            shadow += 1.0;
+    }
+    shadow /= float(samples);
 
     return shadow;
 }

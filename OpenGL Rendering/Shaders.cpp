@@ -1,8 +1,8 @@
 #include "Shaders.h"
 
-Shaders::Shaders(const char* vertexPath, const char* fragmentPath)
+Shaders::Shaders(const char* vertexPath, const char* fragmentPath, const char* geometryPath)
 {
-    ID = createShader(vertexPath, fragmentPath);
+    ID = createShader(vertexPath, fragmentPath, geometryPath);
 }
 
 void Shaders::use()
@@ -35,9 +35,9 @@ void Shaders::setVec3(const string& name, float x, float y, float z)
     glUniform3f(glGetUniformLocation(ID, name.c_str()), x, y, z);
 }
 
-void Shaders::reloadShader(GLuint* ID, const char* vertexPath, const char* fragmentPath)
+void Shaders::reloadShader(GLuint* ID, const char* vertexPath, const char* fragmentPath, const char* geometryPath)
 {
-    GLuint reloadID = createShader(vertexPath, fragmentPath);
+    GLuint reloadID = createShader(vertexPath, fragmentPath, geometryPath);
     if (reloadID) {
         glDeleteProgram(*ID);
         *ID = reloadID;
@@ -68,17 +68,20 @@ void Shaders::checkCompileErrors(unsigned int shader, string type)
     }
 }
 
-GLuint Shaders::createShader(const char* vertexPath, const char* fragmentPath)
+GLuint Shaders::createShader(const char* vertexPath, const char* fragmentPath, const char* geometryPath)
 {
     string vertexCode;
     string fragmentCode;
+    string geometryCode;
     ifstream vShaderFile;
     ifstream fShaderFile;
+    ifstream gShaderFile;
     GLuint shaderID;
 
     // ensure ifstream objects can throw exceptions:
     vShaderFile.exceptions(ifstream::failbit | ifstream::badbit);
     fShaderFile.exceptions(ifstream::failbit | ifstream::badbit);
+    gShaderFile.exceptions(ifstream::failbit | ifstream::badbit);
     try
     {
         // open files
@@ -94,6 +97,13 @@ GLuint Shaders::createShader(const char* vertexPath, const char* fragmentPath)
         // convert stream into string
         vertexCode = vShaderStream.str();
         fragmentCode = fShaderStream.str();
+        if (geometryPath != nullptr) {
+            gShaderFile.open(geometryPath);
+            stringstream gShaderStream;
+            gShaderStream << gShaderFile.rdbuf();
+            gShaderFile.close();
+            geometryCode = gShaderStream.str();
+        }
     }
     catch (ifstream::failure& e)
     {
@@ -102,7 +112,7 @@ GLuint Shaders::createShader(const char* vertexPath, const char* fragmentPath)
     const char* vShaderCode = vertexCode.c_str();
     const char* fShaderCode = fragmentCode.c_str();
     // compile shaders
-    unsigned int vertex, fragment;
+    unsigned int vertex, fragment, geometry;
     // vertex shader
     vertex = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertex, 1, &vShaderCode, NULL);
@@ -113,14 +123,28 @@ GLuint Shaders::createShader(const char* vertexPath, const char* fragmentPath)
     glShaderSource(fragment, 1, &fShaderCode, NULL);
     glCompileShader(fragment);
     checkCompileErrors(fragment, "FRAGMENT");
+    // geometry Shader
+    if (geometryPath != nullptr) {
+        const char* gShaderCode = geometryCode.c_str();
+        geometry = glCreateShader(GL_GEOMETRY_SHADER);
+        glShaderSource(geometry, 1, &gShaderCode, NULL);
+        glCompileShader(geometry);
+        checkCompileErrors(geometry, "GEOMETRY");
+    }
     // shader Program
     shaderID = glCreateProgram();
     glAttachShader(shaderID, vertex);
     glAttachShader(shaderID, fragment);
+    if (geometryPath != nullptr) {
+        glAttachShader(shaderID, geometry);
+    }
     glLinkProgram(shaderID);
     checkCompileErrors(shaderID, "PROGRAM");
     // delete the shaders as they're linked into our program now and no longer necessary
     glDeleteShader(vertex);
     glDeleteShader(fragment);
+    if (geometryPath != nullptr) {
+        glDeleteShader(geometry);
+    }
     return shaderID;
 }
